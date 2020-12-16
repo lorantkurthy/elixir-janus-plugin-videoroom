@@ -12,6 +12,7 @@ defmodule Janus.Plugin.VideoRoom do
     PublisherConfig,
     PublisherJoinConfig,
     PublisherJoinedResponse,
+    RtpForwardConfig,
     SubscriberConfig,
     SubscriberJoinConfig
   }
@@ -444,6 +445,129 @@ defmodule Janus.Plugin.VideoRoom do
       error -> Errors.handle(error)
     end
   end
+
+  @doc """
+  Forward RTP stream.
+
+  ## Arguments
+  * `session` - valid `Janus.Session` process to send request through
+  * `room_id` - new room's id, if set to nil gateway will create one
+  * `rtp_forward_config` - struct containing necessary information about forwarding, see `t:Janus.Plugin.VideoRoom.RtpForwardConfig.t/0`
+  * `handle_id` - an id of caller's handle
+  * `admin_key` - optional admin key if gateway requires it
+  """
+  @spec rtp_forward(
+          Session.t(),
+          room_id,
+          RtpForwardConfig.t(),
+          Session.plugin_handle_id(),
+          admin_key
+        ) :: {:ok, String.t()} | {:error, any}
+  def rtp_forward(
+        session,
+        room_id,
+        rtp_forward_config,
+        handle_id,
+        admin_key \\ nil
+      ) do
+
+    message =
+      rtp_forward_config
+      |> RtpForwardConfig.to_janus_message()
+      |> Map.merge(%{request: "rtp_forward", room_id: room_id})
+      |> Map.put(@admin_key, admin_key)
+      |> Enum.filter(fn {_key, value} -> value != nil end)
+      |> Enum.into(%{})
+      |> new_janus_message(handle_id)
+
+    with {:ok,
+            %{
+              "videoroom" => "rtp_forward",
+              "room" => _room_id,
+              "publisher_id" => _publisher_id,
+              "rtp_stream" => rtp_stream
+            }
+          } <-
+            Session.execute_async_request(session, message) do
+      {:ok, rtp_stream}
+    else
+      error -> Errors.handle(error)
+    end
+  end
+
+  @spec stop_rtp_forward(
+          Session.t(),
+          room_id,
+          non_neg_integer(),
+          non_neg_integer(),
+          Session.plugin_handle_id(),
+          admin_key
+        ) :: {:ok, String.t()} | {:error, any}
+  def stop_rtp_forward(
+        session,
+        room_id,
+        publisher_id,
+        stream_id,
+        handle_id,
+        admin_key \\ nil
+      ) do
+
+    message =
+      %{request: "stop_rtp_forward", room: room_id, publisher_id: publisher_id, stream_id: stream_id}
+      |> Map.put(@admin_key, admin_key)
+      |> Enum.filter(fn {_key, value} -> value != nil end)
+      |> Enum.into(%{})
+      |> new_janus_message(handle_id)
+
+    with {:ok,
+            %{
+              "videoroom" => "stop_rtp_forward",
+              "room" => _room_id,
+              "publisher_id" => _publisher_id,
+              "stream_id" => _stream_id
+            }
+          } <-
+            Session.execute_async_request(session, message) do
+      :ok
+    else
+      error -> Errors.handle(error)
+    end
+  end
+
+  @spec listforwarders(
+          Session.t(),
+          room_id,
+          Session.plugin_handle_id(),
+          admin_key
+        ) :: {:ok, String.t()} | {:error, any}
+  def listforwarders(
+        session,
+        room_id,
+        handle_id,
+        admin_key \\ nil
+      ) do
+
+    message =
+      %{request: "listforwarders", room: room_id}
+      |> Map.put(@admin_key, admin_key)
+      |> Enum.filter(fn {_key, value} -> value != nil end)
+      |> Enum.into(%{})
+      |> new_janus_message(handle_id)
+
+    with {:ok,
+            %{
+              "videoroom" => "forwarders",
+              "room" => _room_id,
+              "rtp_forwarders" => rtp_forwarders
+            }
+          } <-
+            Session.execute_async_request(session, message) do
+      {:ok, rtp_forwarders}
+    else
+      error -> Errors.handle(error)
+    end
+  end
+
 
   # TODO: "rtp_forward"
   # TODO: "stop_rtp_forward"
