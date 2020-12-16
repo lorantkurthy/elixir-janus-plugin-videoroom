@@ -462,7 +462,7 @@ defmodule Janus.Plugin.VideoRoom do
           RtpForwardConfig.t(),
           Session.plugin_handle_id(),
           admin_key
-        ) :: {:ok, String.t()} | {:error, any}
+        ) :: {:ok, map()} | {:error, any}
   def rtp_forward(
         session,
         room_id,
@@ -502,7 +502,7 @@ defmodule Janus.Plugin.VideoRoom do
           non_neg_integer(),
           Session.plugin_handle_id(),
           admin_key
-        ) :: {:ok, String.t()} | {:error, any}
+        ) :: :ok | {:error, any}
   def stop_rtp_forward(
         session,
         room_id,
@@ -539,7 +539,7 @@ defmodule Janus.Plugin.VideoRoom do
           room_id,
           Session.plugin_handle_id(),
           admin_key
-        ) :: {:ok, String.t()} | {:error, any}
+        ) :: {:ok, map()} | {:error, any}
   def listforwarders(
         session,
         room_id,
